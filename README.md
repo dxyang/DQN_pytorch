@@ -8,7 +8,7 @@ This repo is a [PyTorch](https://www.pytorch.org/) implementation of Vanilla DQN
 - [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/abs/1509.06461)
 - [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/abs/1511.06581)
 
-Starter code is used from [Berkeley CS 294 Assignment 3](https://github.com/berkeleydeeprlcourse/homework/tree/master/hw3) and modified for PyTorch with some guidance from [here](https://github.com/transedward/pytorch-dqn). Tensorboard logging has also been added (thanks [here](https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard) for visualization during training in addition to what the Gym Monitor already does.
+Starter code is used from [Berkeley CS 294 Assignment 3](https://github.com/berkeleydeeprlcourse/homework/tree/master/hw3) and modified for PyTorch with some guidance from [here](https://github.com/transedward/pytorch-dqn). Tensorboard logging has also been added (thanks [here](https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard) for visualization during training in addition to what the Gym Monitor already does).
 
 ## Background
 Deep Q-networks use neural networks as function approximators for the action-value function, Q. The architecture used here specifically takes inputs frames from the Atari simulator as input (i.e., the state) and passes these frames through two convolutional layers and two fully connected layers before outputting a Q value for each action. 
@@ -26,16 +26,13 @@ Deep Q-networks use neural networks as function approximators for the action-val
 Noting that vanilla DQN can overestimate action values, [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/abs/1509.06461) proposes an alternative Q target value that takes the argmax of the current Q network when inputted with the next observations. These actions, together with the next observations, are passed into the frozen target network to yield Q values at each update. This new Q target is shown below.
 
 <p align="center">
-    <img src="assets/double_q_target.png" height="100p">
+    <img src="assets/double_q_target.png" height="70px">
 </p>
 
 Finally, [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/abs/1511.06581) proposes a different architecture for approximating Q functions. After the last convolutional layer, the output is split into two streams that separately estimate the state-value and advantages for each action within the state. These two estimations are then combined together to generate a Q value through the equation below. The architecture is also shown here in contrast to traditional Deep Q-Learning networks.
 
 <p align="center">
     <img src="assets/dueling_q_target.png" height="150px">
-</p>
-
-<p align="center">
     <img src="assets/dueling_q_arch.png" height="300px">
 </p>
 
