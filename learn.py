@@ -27,7 +27,7 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 # Set the logger
 logger = Logger('./logs')
 def to_np(x):
-    return x.data.cpu().numpy() 
+    return x.data.cpu().numpy()
 
 def dqn_learning(env,
           env_id,
@@ -97,8 +97,8 @@ def dqn_learning(env,
         input_shape = (img_h, img_w, frame_history_len * img_c)
         in_channels = input_shape[2]
     num_actions = env.action_space.n
-    
-    # define Q target and Q 
+
+    # define Q target and Q
     Q = q_func(in_channels, num_actions).type(dtype)
     Q_target = q_func(in_channels, num_actions).type(dtype)
 
@@ -107,6 +107,11 @@ def dqn_learning(env,
 
     # create replay buffer
     replay_buffer = ReplayBuffer(replay_buffer_size, frame_history_len)
+
+    # check version of pytorch, used to fix issue
+    # with newer version of pytorch and the unsqueeze function
+    # issue url: https://github.com/dxyang/DQN_pytorch/issues/2
+    pytorch_new = torch.__version__ >= "0.3.0"
 
     ######
 
@@ -187,7 +192,7 @@ def dqn_learning(env,
                 #   double DQN
                 # ---------------
 
-                # get the Q values for best actions in obs_tp1 
+                # get the Q values for best actions in obs_tp1
                 # based off the current Q network
                 # max(Q(s', a', theta_i)) wrt a'
                 q_tp1_values = Q(obs_tp1).detach()
@@ -200,7 +205,7 @@ def dqn_learning(env,
                 q_target_s_a_prime = q_target_s_a_prime.squeeze()
 
                 # if current state is end of episode, then there is no next Q value
-                q_target_s_a_prime = (1 - done_mask) * q_target_s_a_prime 
+                q_target_s_a_prime = (1 - done_mask) * q_target_s_a_prime
 
                 error = rew_t + gamma * q_target_s_a_prime - q_s_a
             else:
@@ -208,25 +213,31 @@ def dqn_learning(env,
                 #   regular DQN
                 # ---------------
 
-                # get the Q values for best actions in obs_tp1 
+                # get the Q values for best actions in obs_tp1
                 # based off frozen Q network
                 # max(Q(s', a', theta_i_frozen)) wrt a'
                 q_tp1_values = Q_target(obs_tp1).detach()
                 q_s_a_prime, a_prime = q_tp1_values.max(1)
 
                 # if current state is end of episode, then there is no next Q value
-                q_s_a_prime = (1 - done_mask) * q_s_a_prime 
+                q_s_a_prime = (1 - done_mask) * q_s_a_prime
 
                 # Compute Bellman error
                 # r + gamma * Q(s',a', theta_i_frozen) - Q(s, a, theta_i)
                 error = rew_t + gamma * q_s_a_prime - q_s_a
 
-            # clip the error and flip 
+            # clip the error and flip
             clipped_error = -1.0 * error.clamp(-1, 1)
 
             # backwards pass
             optimizer.zero_grad()
-            q_s_a.backward(clipped_error.data.unsqueeze(1))
+
+            # fixes issue with newer version of pytorch and the unsqueeze function
+            # issue url: https://github.com/dxyang/DQN_pytorch/issues/2
+            if pytorch_new:
+                q_s_a.backward(clipped_error.data)
+            else:
+                q_s_a.backward(clipped_error.data.unsqueeze(1))
 
             # update
             optimizer.step()
@@ -250,7 +261,7 @@ def dqn_learning(env,
                 os.makedirs("models")
             add_str = ''
             if (double_dqn):
-                add_str = 'double' 
+                add_str = 'double'
             if (dueling_dqn):
                 add_str = 'dueling'
             model_save_path = "models/%s_%s_%d_%s.model" %(str(env_id), add_str, t, str(time.ctime()).replace(' ', '_'))
